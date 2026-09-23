@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${article.title}">Article Detail</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif;
+            background-color: #fafafa;
+            display: flex; justify-content: center; padding: 20px; margin: 0;
+        }
+        .mockup-container {
+            background-color: white; border: 3px solid #222; border-radius: 6px;
+            width: 100%; max-width: 500px; padding: 20px 25px;
+        }
+        .back-btn {
+            display: inline-block; margin-bottom: 15px; color: #555; text-decoration: none; font-size: 14px;
+        }
+        .back-btn:hover { text-decoration: underline; }
+        h1 {
+            font-size: clamp(22px, 6vw, 32px); margin: 0 0 5px 0; color: #222; word-break: break-word;
+        }
+        .article-date {
+            color: #999; font-size: 15px; font-weight: bold; display: block; margin-bottom: 25px;
+        }
+        .article-content {
+            font-size: 17px; line-height: 1.6; color: #111;
+            white-space: pre-wrap; word-break: break-word; /* Chống tràn viền khi gặp link dài */
+        }
+    </style>
+</head>
+<body>
+<div class="mockup-container">
+    <a th:href="@{/home}" class="back-btn">← Back to Home</a>
+    <h1 th:text="${article.title}">My first article</h1>
+    <span class="article-date" th:text="${#temporals.format(article.time, 'MMMM d, yyyy')}">August 7, 2024</span>
+    <div class="article-content" th:text="${article.content}">Lorem ipsum...</div>
+</div>
+</body>
+</html>

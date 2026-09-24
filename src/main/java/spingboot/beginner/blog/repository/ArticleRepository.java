@@ -75,7 +75,7 @@ public class ArticleRepository {
                 }
             }
         }
-        return articles;
+        return articles; // không phải là null vì đã khởi tạo
     }
 
     // 3. Hàm lấy 1 bài viết theo ID (Dành cho trang xem chi tiết)

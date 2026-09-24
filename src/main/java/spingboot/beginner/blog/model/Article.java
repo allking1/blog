@@ -15,5 +15,8 @@ public class Article {
     private String id;
     private String title;
     private String content;
-    private LocalDateTime time; // createTime and updateTime
+    private LocalDateTime createdAt;
+    private LocalDateTime lastUpdatedAt;
+    private LocalDateTime PublishDate;
+
 }

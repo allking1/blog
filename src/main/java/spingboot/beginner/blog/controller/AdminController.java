@@ -1,10 +1,15 @@
 package spingboot.beginner.blog.controller;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import spingboot.beginner.blog.model.Article;
 import spingboot.beginner.blog.service.ArticleService;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 
 @Controller
@@ -17,43 +22,62 @@ public class AdminController {
         this.articleService = articleService;
     }
 
-    // 1. Dashboard (Hiển thị danh sách)
-    @GetMapping({"", "/"}) // Lắng nghe cả /admin và /admin/
+    // Trong AdminController.java (nhớ import org.springframework.format.annotation.DateTimeFormat;)
+
+    @GetMapping({"", "/"})
     public String dashboard(Model model) {
         model.addAttribute("articles", articleService.findAll());
-        return "dashboard";
+        // Bỏ dấu gạch chéo ở đầu đi, Thymeleaf không cần nó
+        return "admin/dashboard";
     }
 
-    // 2. Giao diện Thêm mới (New Article)
+    @GetMapping("/article/{id}")
+    public String article(@PathVariable String id, Model model) {
+        model.addAttribute("article", articleService.findById(id));
+        return "admin/article-detail";
+    }
+
     @GetMapping("/new")
     public String newArticleForm() {
-        return "new-article";
+        return "admin/new-article";
     }
 
-    // 3. Xử lý lưu Thêm mới
     @PostMapping("/new")
-    public String processNewArticle(@RequestParam String title, @RequestParam String content) {
-        articleService.createArticle(title, content);
-        // Sau khi lưu xong, điều hướng (redirect) về lại trang dashboard
+    public String processNewArticle(
+            @RequestParam String title,
+            @RequestParam String content,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime publishDate) { // ÉP KIỂU Ở ĐÂY
+        articleService.createArticle(title, content, publishDate);
         return "redirect:/admin";
     }
 
-    // 4. Giao diện Sửa (Update Article)
     @GetMapping("/edit/{id}")
     public String editArticleForm(@PathVariable String id, Model model) {
         Article article = articleService.findById(id);
         model.addAttribute("article", article);
-        return "edit-article";
+
+        // TÍNH TOÁN XEM BÀI ĐÃ PUBLISH CHƯA RỒI TRUYỀN XUỐNG GIAO DIỆN
+        boolean isPublished = !article.getPublishDate().isAfter(LocalDateTime.now());
+        model.addAttribute("isPublished", isPublished);
+
+        return "admin/edit-article";
     }
 
-    // 5. Xử lý lưu Sửa
-    @PostMapping("/edit/{id}")
-    public String processEditArticle(@PathVariable String id, @RequestParam String title, @RequestParam String content) {
+    @PostMapping("/edit/published/{id}")
+    public String processPublisedEditArticle(@PathVariable String id, @RequestParam String title, @RequestParam String content) {
         articleService.updateArticle(id, title, content);
         return "redirect:/admin";
     }
 
-    // 6. Xử lý Xóa (Dùng POST để tránh rủi ro bảo mật so với GET)
+    @PostMapping("/edit/unPublished/{id}")
+    public String processNotPublishedArticle(
+            @PathVariable String id,
+            @RequestParam String title,
+            @RequestParam String content,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime publishDate) { // ÉP KIỂU Ở ĐÂY
+        articleService.updateArticle(id, title, content, publishDate);
+        return "redirect:/admin";
+    }
     @PostMapping("/delete/{id}")
     public String deleteArticle(@PathVariable String id) {
         articleService.deleteById(id);

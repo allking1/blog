@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Editor</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Comic Sans MS', sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
+        .mockup-container { background-color: white; border: 3px solid #222; border-radius: 6px; width: 100%; max-width: 600px; padding: 20px 25px; }
+        .form-group { margin-bottom: 15px; }
+        input, textarea { width: 100%; border: 3px solid #222; border-radius: 4px; padding: 10px; font-family: inherit; font-size: 15px; }
+        textarea { height: 200px; resize: vertical; }
+        button { border: 3px solid #222; background: white; padding: 10px; border-radius: 4px; font-family: inherit; font-weight: bold; cursor: pointer; width: 100%; }
+        .error-box { background-color: #ffe6e6; border: 2px solid red; padding: 10px; color: red; font-weight: bold; margin-bottom: 15px; display: none; }
+    </style>
+</head>
+<body>
+<div class="mockup-container">
+    <a href="/admin/dashboard.html" style="color:#555; text-decoration:none;">← Back</a>
+
+    <h1 id="pageTitle">New Article</h1>
+
+    <!-- Hộp hiển thị lỗi từ Backend ném ra -->
+    <div id="errorBox" class="error-box"></div>
+
+    <form id="editorForm">
+        <div class="form-group">
+            <input type="text" id="title" placeholder="Title" required>
+        </div>
+        <div class="form-group">
+            <label>Publish Date:</label>
+            <input type="datetime-local" id="publishDate" required>
+        </div>
+        <div class="form-group">
+            <textarea id="content" placeholder="Content" required></textarea>
+        </div>
+        <button type="submit" id="submitBtn">Save</button>
+    </form>
+</div>
+
+<script>
+    // 1. NHẬN DIỆN CHẾ ĐỘ (Tạo mới hay Sửa)
+    const urlParams = new URLSearchParams(window.location.search);
+    const articleId = urlParams.get('id');
+    const isEditMode = (articleId !== null); // Nếu có ID trên URL -> Chế độ Sửa
+
+    if (isEditMode) {
+        document.getElementById('pageTitle').innerText = 'Edit Article';
+        document.getElementById('submitBtn').innerText = 'Update';
+        loadArticleData();
+    }
+
+    // 2. NẾU LÀ CHẾ ĐỘ SỬA -> Gọi API lấy dữ liệu cũ đổ vào Form
+    async function loadArticleData() {
+        const response = await fetch(`/api/admin/articles/${articleId}`);
+        if(response.status === 401) { window.location.href = '/login.html'; return; }
+
+        const article = await response.json();
+        document.getElementById('title').value = article.title;
+        document.getElementById('publishDate').value = article.publishDate;
+        document.getElementById('content').value = article.content;
+
+        // Xử lý Client-Side: Nếu bài đã publish (tính bằng JS), khóa ô nhập ngày
+        const now = new Date();
+        const pubDate = new Date(article.publishDate);
+        if (pubDate <= now) {
+            document.getElementById('publishDate').readOnly = true;
+            document.getElementById('publishDate').style.backgroundColor = '#eee';
+        }
+    }
+
+    // 3. XỬ LÝ KHI BẤM NÚT SAVE
+    document.getElementById('editorForm').onsubmit = async (e) => {
+        e.preventDefault();
+
+        // Đóng gói DTO
+        const payload = {
+            title: document.getElementById('title').value,
+            publishDate: document.getElementById('publishDate').value,
+            content: document.getElementById('content').value
+        };
+
+        // Gọi API (Tạo mới dùng POST, Sửa dùng PUT)
+        const apiUrl = isEditMode ? `/api/admin/articles/${articleId}` : '/api/admin/articles';
+        const apiMethod = isEditMode ? 'PUT' : 'POST';
+
+        const response = await fetch(apiUrl, {
+            method: apiMethod,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const errorBox = document.getElementById('errorBox');
+
+        if (response.ok) {
+            // Thành công (Mã 201 hoặc 200) -> Đá về dashboard
+            window.location.href = '/admin/dashboard.html';
+        } else if (response.status === 400) {
+            // Lỗi nghiệp vụ (Mã 400 Bad Request) do tầng Service hoặc Valid ném ra
+            const errorData = await response.json();
+
+            // Trích xuất chữ đỏ từ JSON
+            let errorMsg = '';
+            if(errorData.error) {
+                errorMsg = errorData.error; // Bắt lỗi từ Service (IllegalArgumentException)
+            } else {
+                // Bắt lỗi do @Valid ở DTO
+                errorMsg = Object.values(errorData).join('<br>');
+            }
+
+            errorBox.innerHTML = '❌ ' + errorMsg;
+            errorBox.style.display = 'block';
+        } else if (response.status === 401) {
+            window.location.href = '/login.html';
+        }
+    };
+</script>
+</body>
+</html>

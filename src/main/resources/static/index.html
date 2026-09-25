@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>My Blog</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Comic Sans MS', sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; padding: 20px; }
+        .mockup-container { background-color: white; border: 3px solid #222; border-radius: 6px; width: 100%; max-width: 600px; padding: 20px 25px; }
+        .top-nav { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #222; padding-bottom: 10px;}
+        a { color: #222; font-weight: bold; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .article-card { border: 2px solid #555; padding: 15px; margin-bottom: 15px; border-radius: 4px; }
+        .article-date { font-size: 13px; color: #666; }
+    </style>
+</head>
+<body>
+<div class="mockup-container">
+    <div class="top-nav">
+        <h2>Welcome to my Blog!</h2>
+        <a href="/login.html">Admin Login</a>
+    </div>
+    <div id="articlesList">Loading articles...</div>
+</div>
+
+<script>
+    async function loadArticles() {
+        const response = await fetch('/api/articles');
+        const articles = await response.json();
+        const listDiv = document.getElementById('articlesList');
+        listDiv.innerHTML = '';
+
+        if(articles.length === 0) {
+            listDiv.innerHTML = '<p>Chưa có bài viết nào.</p>';
+            return;
+        }
+
+        articles.forEach(article => {
+            const card = document.createElement('div');
+            card.className = 'article-card';
+            // Thay vì thẻ <a> chuyển trang ở server, giờ ta chuyển đến detail.html kèm query params ID
+            card.innerHTML = `
+                <h3><a href="/detail.html?id=${article.id}">${article.title}</a></h3>
+                <div class="article-date">Published: ${article.publishDate.replace('T', ' ')}</div>
+            `;
+            listDiv.appendChild(card);
+        });
+    }
+
+    loadArticles(); // Gọi hàm khi load trang
+</script>
+</body>
+</html>

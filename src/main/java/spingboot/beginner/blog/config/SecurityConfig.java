@@ -1,17 +1,13 @@
-package spingboot.beginner.blog.config;
+package spingboot.beginner.blog.config; // Đảm bảo đúng tên package của bạn
 
-
-import org.springframework.beans.factory.annotation.Configurable;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.NoOpPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -22,49 +18,70 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Tắt CSRF để tránh lỗi form đăng nhập mặc định bị chặn
+                // 1. TẮT CSRF: Bắt buộc tắt khi dùng API thuần để test trên localhost
+                // Nếu không tắt, các API POST/PUT/DELETE sẽ bị chặn (báo lỗi 403 Forbidden)
                 .csrf(csrf -> csrf.disable())
 
-                // 2. Phân luồng đường dẫn (Routing)
+                // 2. PHÂN QUYỀN ĐƯỜNG DẪN
                 .authorizeHttpRequests(auth -> auth
-                        // KHÓA chặt đúng 2 trường hợp: gõ "/admin" hoặc gõ "/admin/bất_cứ_gì"
-                        .requestMatchers("/admin", "/admin/**").authenticated()
-
-                        // MỞ CỬA toàn bộ các đường dẫn còn lại (bao gồm /home, /article, và cả trang /error)
-                        .anyRequest().permitAll()
+                        // Cho phép tải tự do các file giao diện tĩnh (HTML, CSS, JS)
+                        .requestMatchers("/", "/*.html", "/css/**", "/js/**").permitAll()
+                        // Cho phép khách vãng lai gọi các API công khai
+                        .requestMatchers("/api/articles/**").permitAll()
+                        // BẮT BUỘC ĐĂNG NHẬP khi gọi các API quản trị
+                        .requestMatchers("/api/admin/**").authenticated()
+                        .anyRequest().authenticated()
                 )
 
-                // 3. Cấu hình Form Login
+                // 3. XỬ LÝ LỖI 401: Khi chưa đăng nhập mà cố gọi API Admin
+                // (Thay vì bẻ lái về trang HTML login, nó sẽ trả về JSON)
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED); // Trả mã 401
+                            response.getWriter().write("{\"error\": \"Bạn chưa đăng nhập!\"}");
+                        })
+                )
+
+                // 4. CẤU HÌNH API ĐĂNG NHẬP (/api/login)
                 .formLogin(form -> form
-                        .defaultSuccessUrl("/admin", true) // Thành công thì đẩy thẳng vào Admin
+                        .loginProcessingUrl("/api/login") // Frontend sẽ POST username/password vào đây
+                        .successHandler((request, response, authentication) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            response.getWriter().write("{\"message\": \"Đăng nhập thành công!\"}");
+                        })
+                        .failureHandler((request, response, exception) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.getWriter().write("{\"error\": \"Sai tài khoản hoặc mật khẩu!\"}");
+                        })
                         .permitAll()
                 )
 
-                // 4. Cấu hình Đăng xuất
+                // 5. CẤU HÌNH API ĐĂNG XUẤT (/api/logout)
                 .logout(logout -> logout
-                        .logoutUrl("/logout")
-                        .logoutSuccessUrl("/") // Đăng xuất xong về trang chủ
+                        .logoutUrl("/api/logout")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setContentType("application/json;charset=UTF-8");
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            response.getWriter().write("{\"message\": \"Đăng xuất thành công!\"}");
+                        })
+                        .deleteCookies("JSESSIONID") // Xóa thẻ phiên làm việc (Cookie)
                         .permitAll()
                 );
 
         return http.build();
     }
 
-    // Thiết lập bộ mã hóa mật khẩu thô (Plain Text) cho dễ thực hành
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return NoOpPasswordEncoder.getInstance();
-    }
-
-    // Khởi tạo tài khoản
+    // Tạo sẵn 1 tài khoản Admin trong RAM để test (Giống với code SSR cũ của bạn)
     @Bean
     public UserDetailsService userDetailsService() {
         UserDetails admin = User.builder()
                 .username("admin")
-                .password("123456") // Gõ thẳng mật khẩu, không cần {noop} nữa
+                .password("{noop}123456") // {noop} báo cho Spring biết mật khẩu này không mã hóa
                 .roles("ADMIN")
                 .build();
-
         return new InMemoryUserDetailsManager(admin);
     }
 }

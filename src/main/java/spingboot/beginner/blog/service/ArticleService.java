@@ -68,6 +68,12 @@ public class ArticleService {
 
     public void createArticle(String title, String content, LocalDateTime publishDate) {
         // Ép thời gian server bỏ qua phần giây và mili-giây để so khớp với giao diện
+        if(title == null || title.isBlank()
+        || content == null || content.isBlank()
+        || publishDate == null) {
+            throw new IllegalArgumentException("Invalid parameters");
+        }
+
         LocalDateTime now = LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
 
         if(publishDate.isBefore(now)) {
@@ -84,34 +90,42 @@ public class ArticleService {
     }
 
     public void updateArticle(String id, String newTitle, String newContent, LocalDateTime newPublishDate) {
+        // 1. Kiểm tra đầu vào (Null / Blank)
+        if(newTitle == null || newTitle.isBlank()
+                || newContent == null || newContent.isBlank()
+                || newPublishDate == null) {
+            throw new IllegalArgumentException("Title, Content and Publish Date must not be empty");
+        }
+
         Article article = findById(id);
         LocalDateTime now = LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MINUTES);
 
-        // LỚP BẢO VỆ BACKEND: Chặn Hacker gọi api đổi giờ khi bài đã publish
-        if (!article.getPublishDate().isAfter(now)) {
-            throw new IllegalStateException("Article is already published, cannot change date.");
+        boolean isAlreadyPublished = !article.getPublishDate().isAfter(now);
+
+        // 2. Tách riêng logic xử lý cho Bài đã xuất bản
+        if (isAlreadyPublished) {
+            if (!newPublishDate.isEqual(article.getPublishDate())) {
+                // Báo lỗi cụ thể: Không được đổi ngày của bài đã xuất bản
+                throw new IllegalArgumentException("Cannot change the publish date of an already published article");
+            }
+        }
+        // 3. Tách riêng logic xử lý cho Bài chưa xuất bản (Draft)
+        else {
+            if (newPublishDate.isBefore(now)) {
+                // Báo lỗi cụ thể: Ngày xuất bản mới không được nằm ở quá khứ
+                throw new IllegalArgumentException("New Publish Date cannot be in the past");
+            }
         }
 
-        if(newPublishDate.isBefore(now)) {
-            throw new IllegalArgumentException("Publish Date cannot be in the past");
-        }
-
+        // 4. Nếu vượt qua mọi lớp bảo vệ ở trên, tiến hành cập nhật
         article.setTitle(newTitle);
         article.setContent(newContent);
-        article.setLastUpdatedAt(LocalDateTime.now());
         article.setPublishDate(newPublishDate);
+        article.setLastUpdatedAt(LocalDateTime.now()); // ĐÃ THÊM DÒNG NÀY (Sửa lỗi bỏ sót)
+
         articleRepository.save(article);
     }
 
-    public void updateArticle(String id, String newTitle, String newContent) {
-        LocalDateTime now = LocalDateTime.now();
-        Article article = findById(id);
-        article.setLastUpdatedAt(now);
-        article.setTitle(newTitle);
-        article.setContent(newContent);
-        articleRepository.save(article);
-        System.out.println("Updated article with id: " + article.getId());
-    }
     public void deleteById(String id) {
         articleRepository.deleteById(id);
     }

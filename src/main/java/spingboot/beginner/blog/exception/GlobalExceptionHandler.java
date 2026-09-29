@@ -10,6 +10,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.util.HashMap;
 import java.util.Map;
 
+
+/*
+Trong các dự án lớn, việc xử lí các ngoại lệ cần có hệ thống, không phải lúc nào cũng xử lý ngay tại chỗ xảy ra ngoại lệ
+Đây là cách xử lý các ngoại lệ tập trung cho toàn bộ hệ thống.
+*/
 @RestControllerAdvice // Áp dụng cho toàn bộ các RestController trong dự án
 public class GlobalExceptionHandler {
 

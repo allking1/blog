@@ -12,6 +12,17 @@ import spingboot.beginner.blog.service.ArticleService;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
+/*
+Controller là tầng đón các Request sau đó gọi các hàm tương ứng của Service để xử lý.
+Nhìn chung tầng này có thể điều hướng, validate các dữ liệu nhận được từ Front end trước.
+Ở đây có sử dụng ResponseEntity là để kiểm soát kỹ các mã HTTP gửi về cho từng trường hợp.
+
+Cách đặt tên api chuẩn
+/api/v1 (version)/admin (authorization/namespace)/articles (resources)/{id} (key).
+CHỈ DÙNG danh từ, KHÔNG CÓ ĐỘNG TỪ vì động từ đã được quyết định bởi phương thức.
+Nên để danh từ ở dạng số nhiều.
+ */
 @RestController
 @RequestMapping("/api/admin/articles")
 public class AdminRestController {

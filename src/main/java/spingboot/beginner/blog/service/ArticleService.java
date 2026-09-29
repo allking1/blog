@@ -7,6 +7,18 @@ import spingboot.beginner.blog.repository.ArticleRepository;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/*
+Đây là tầng Business Logic, nghĩa là mọi logic nghiệp vụ, xử lý như thế nào, bao gồm những thao tác gì đều nằm ở tầng này.
+
+Có thể xử lý DTO ở tầng này (tùy hệ thống, bài toán), hoặc cũng có thể tạo ra 1 tầng Mapper trung gian để chuyển đổi
+giữa Service và Controller. Đối với Restful api thì Service xử lý hết, tránh phình to Controller -> FAT SERVICE.
+
+Nhìn chung tầng này có thể sẽ xử lý mọi logic, validate dữ liệu, validate nghiệp vụ, chuyển đổi dữ liệu nhận được từ Database sang kiểu mong
+muốn. Chính vì vậy tầng này code phải clean, xử lý rõ ràng, ghi rõ thông báo cho từng trường hợp, nơi này cũng phát sinh
+khá nhiều exception.
+
+
+*/
 @Service
 public class ArticleService {
 

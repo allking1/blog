@@ -13,6 +13,14 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+
+/*
+Khi viết giao diện cho hệ thống nên tách biệt phân quyền, tức là quyền khác nhau thì không nên dùng chung 1 file giao diện
+-> Khó bắt lỗi, code, không đảm bảo bảo mật.
+
+Nếu cùng 1 quyền, các giao diện gần giống nhau thì có thể viết gộp.
+
+ */
 public class SecurityConfig {
 
     @Bean

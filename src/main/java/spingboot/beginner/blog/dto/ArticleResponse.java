@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import java.time.LocalDateTime;
-
+// giống Request nhưng đây là object gửi cho client -> response.
 @Data
 public class ArticleResponse {
 

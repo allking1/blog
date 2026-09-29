@@ -14,3 +14,11 @@ services:
       - mysql_data:/var/lib/mysql
 volumes:
   mysql_data:
+
+# Cách set up docker chạy database,
+# cấu hình POM, thêm dependencies: SQL driver, Hibernate,....
+# Viết Docker-compose: version, image, tạo tài khoản database, đục cổng giao tiếp, tạo volumes
+# Thêm các thông tin vào file application.properties
+# Chỉnh code: @Repository, @Entity,...
+# Khởi động Docker Engine, run container : docker-compose up -d
+# Chạy dự án như bình thường

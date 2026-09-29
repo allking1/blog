@@ -34,3 +34,6 @@ build/
 
 # Bỏ qua thư mục chứa file JSON bài viết
 data/
+
+# password
+.env

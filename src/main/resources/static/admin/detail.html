@@ -42,7 +42,21 @@
 
         if (response.ok) {
             const article = await response.json();
-            document.getElementById('title').innerText = '[PREVIEW] ' + article.title;
+
+            const publishDateObj = new Date(article.publishDate);
+            const currentDate = new Date();
+
+            let statusPrefix = '';
+            if (publishDateObj > currentDate) {
+                // Nếu ngày đăng ở tương lai -> Chưa xuất bản
+                statusPrefix = '[PREVIEW] ';
+            } else {
+                // Nếu ngày đăng đã qua -> Đã xuất bản
+                statusPrefix = '[VIEW] ';
+            }
+
+            document.getElementById('title').innerText = statusPrefix + article.title;
+
             document.getElementById('date').innerText = 'Publish Date: ' + article.publishDate.replace('T', ' ');
             document.getElementById('content').innerText = article.content;
 

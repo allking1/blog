@@ -12,6 +12,21 @@
         button, .btn { border: 2px solid #222; background: white; padding: 5px 10px; border-radius: 4px; font-family: inherit; font-weight: bold; cursor: pointer; text-decoration: none; color: black; font-size: 14px;}
         .table { width: 100%; border-collapse: collapse; }
         .table th, .table td { border: 2px solid #222; padding: 10px; text-align: left; }
+        /* Thêm vào cuối thẻ <style> hiện tại của bạn */
+        .tag {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 2px solid #222;
+            display: inline-block;
+        }
+        .tag-published {
+            background-color: #a3e635; /* Màu xanh lá nhạt */
+        }
+        .tag-scheduled {
+            background-color: #fde047; /* Màu vàng nhạt */
+        }
     </style>
 </head>
 <body>
@@ -28,6 +43,7 @@
         <thead>
         <tr>
             <th>Title</th>
+            <th>Status</th> <!-- Thêm cột này -->
             <th>Publish Date</th>
             <th>Action</th>
         </tr>
@@ -53,18 +69,35 @@
         tbody.innerHTML = '';
 
         articles.forEach(article => {
-            const tr = document.createElement('tr');
-            // Nút Edit dẫn sang editor.html kèm ID
-            tr.innerHTML = `
-                <td><a href="/admin/detail.html?id=${article.id}">${article.title}</a></td>
-                <td>${article.publishDate.replace('T', ' ')}</td>
-                <td>
-                    <a href="/admin/editor.html?id=${article.id}" class="btn">Edit</a>
-                    <button class="btn" style="color:red;" onclick="deleteArticle('${article.id}')">Delete</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
+    // 1. Tạo biến chứa HTML của tag
+    let statusTagHTML = '';
+
+    // 2. Chuyển đổi chuỗi publishDate từ Backend thành đối tượng Date trong Javascript
+    const publishDateObj = new Date(article.publishDate);
+    const currentDate = new Date(); // Lấy thời gian hiện tại của máy tính/trình duyệt
+
+    // 3. Logic kiểm tra (GIẢ ĐỊNH DỰA VÀO THỜI GIAN)
+    if (publishDateObj > currentDate) {
+        // Nếu ngày đăng ở trong tương lai -> Lên lịch
+        statusTagHTML = '<span class="tag tag-scheduled">Scheduled</span>';
+    } else {
+        // Nếu ngày đăng đã qua -> Đã xuất bản
+        statusTagHTML = '<span class="tag tag-published">Published</span>';
+    }
+
+    // 4. Đổ dữ liệu vào hàng (thêm thẻ <td> chứa tag)
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><a href="/admin/detail.html?id=${article.id}">${article.title}</a></td>
+        <td>${statusTagHTML}</td> <!-- Cột Status mới -->
+        <td>${article.publishDate.replace('T', ' ')}</td>
+        <td>
+            <a href="/admin/editor.html?id=${article.id}" class="btn">Edit</a>
+            <button class="btn" style="color:red;" onclick="deleteArticle('${article.id}')">Delete</button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+});
     }
 
     async function deleteArticle(id) {

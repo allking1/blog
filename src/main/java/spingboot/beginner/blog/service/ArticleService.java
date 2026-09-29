@@ -1,6 +1,5 @@
 package spingboot.beginner.blog.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import spingboot.beginner.blog.model.Article;
 import spingboot.beginner.blog.repository.ArticleRepository;
@@ -46,13 +45,17 @@ public class ArticleService {
     }
 
     public List<Article> findAll() {
-        List<Article> articles = articleRepository.findAll();
-        articles.sort(Comparator.comparing(Article :: getPublishDate).reversed());
-        return articles;
+        Iterable<Article> articles = articleRepository.findAll();
+        List<Article> articleList = new ArrayList<>();
+        for(Article article : articles) {
+            articleList.add(article);
+        }
+        articleList.sort(Comparator.comparing(Article :: getPublishDate).reversed());
+        return articleList;
     }
 
     public List<Article> findAllPublisedArticles() {
-        List<Article> articles = articleRepository.findAll();
+        Iterable<Article> articles = articleRepository.findAll();
         List<Article> PublishedArticles = new ArrayList<>();
         for(Article article : articles) {
             if(!article.getPublishDate().isAfter(LocalDateTime.now())) {

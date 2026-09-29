@@ -12,6 +12,10 @@
         textarea { height: 200px; resize: vertical; }
         button { border: 3px solid #222; background: white; padding: 10px; border-radius: 4px; font-family: inherit; font-weight: bold; cursor: pointer; width: 100%; }
         .error-box { background-color: #ffe6e6; border: 2px solid red; padding: 10px; color: red; font-weight: bold; margin-bottom: 15px; display: none; }
+
+        /* CSS cho nút Set Time mới */
+        .btn-now { width: auto; padding: 4px 10px; font-size: 12px; border: 2px solid #222; background: #e0f2fe; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-now:hover { background: #bae6fd; }
     </style>
 </head>
 <body>
@@ -20,17 +24,23 @@
 
     <h1 id="pageTitle">New Article</h1>
 
-    <!-- Hộp hiển thị lỗi từ Backend ném ra -->
+    <!-- Hộp hiển thị lỗi -->
     <div id="errorBox" class="error-box"></div>
 
     <form id="editorForm">
         <div class="form-group">
             <input type="text" id="title" placeholder="Title" required>
         </div>
+
         <div class="form-group">
-            <label>Publish Date:</label>
+            <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                <span>Publish Date:</span>
+                <!-- Nút này thay thế hoàn hảo cho nút Today bất lực của trình duyệt -->
+                <button type="button" id="btnSetNow" class="btn-now">⏰ Set to Now</button>
+            </label>
             <input type="datetime-local" id="publishDate" required>
         </div>
+
         <div class="form-group">
             <textarea id="content" placeholder="Content" required></textarea>
         </div>
@@ -39,10 +49,10 @@
 </div>
 
 <script>
-    // 1. NHẬN DIỆN CHẾ ĐỘ (Tạo mới hay Sửa)
+    // 1. NHẬN DIỆN CHẾ ĐỘ
     const urlParams = new URLSearchParams(window.location.search);
     const articleId = urlParams.get('id');
-    const isEditMode = (articleId !== null); // Nếu có ID trên URL -> Chế độ Sửa
+    const isEditMode = (articleId !== null);
 
     if (isEditMode) {
         document.getElementById('pageTitle').innerText = 'Edit Article';
@@ -50,7 +60,7 @@
         loadArticleData();
     }
 
-    // 2. NẾU LÀ CHẾ ĐỘ SỬA -> Gọi API lấy dữ liệu cũ đổ vào Form
+    // 2. NẾU LÀ CHẾ ĐỘ SỬA -> Đổ dữ liệu cũ
     async function loadArticleData() {
         const response = await fetch(`/api/admin/articles/${articleId}`);
         if(response.status === 401) { window.location.href = '/login.html'; return; }
@@ -60,27 +70,38 @@
         document.getElementById('publishDate').value = article.publishDate;
         document.getElementById('content').value = article.content;
 
-        // Xử lý Client-Side: Nếu bài đã publish (tính bằng JS), khóa ô nhập ngày
+        // Khóa ngày nếu bài đã xuất bản
         const now = new Date();
         const pubDate = new Date(article.publishDate);
         if (pubDate <= now) {
             document.getElementById('publishDate').readOnly = true;
             document.getElementById('publishDate').style.backgroundColor = '#eee';
+            // Ẩn luôn nút Set to Now cho an toàn
+            document.getElementById('btnSetNow').style.display = 'none';
         }
     }
 
-    // 3. XỬ LÝ KHI BẤM NÚT SAVE
+    // 3. XỬ LÝ NÚT LẤY GIỜ HIỆN TẠI (Giải quyết triệt để vấn đề Ngày + Giờ)
+    document.getElementById('btnSetNow').addEventListener('click', () => {
+        const dateInput = document.getElementById('publishDate');
+        if (dateInput.readOnly) return;
+
+        // Thuật toán lấy giờ Local máy tính và format đúng chuẩn YYYY-MM-DDThh:mm
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        dateInput.value = now.toISOString().slice(0, 16);
+    });
+
+    // 4. XỬ LÝ LƯU BÀI (Gửi API)
     document.getElementById('editorForm').onsubmit = async (e) => {
         e.preventDefault();
 
-        // Đóng gói DTO
         const payload = {
             title: document.getElementById('title').value,
             publishDate: document.getElementById('publishDate').value,
             content: document.getElementById('content').value
         };
 
-        // Gọi API (Tạo mới dùng POST, Sửa dùng PUT)
         const apiUrl = isEditMode ? `/api/admin/articles/${articleId}` : '/api/admin/articles';
         const apiMethod = isEditMode ? 'PUT' : 'POST';
 
@@ -93,21 +114,10 @@
         const errorBox = document.getElementById('errorBox');
 
         if (response.ok) {
-            // Thành công (Mã 201 hoặc 200) -> Đá về dashboard
             window.location.href = '/admin/dashboard.html';
         } else if (response.status === 400) {
-            // Lỗi nghiệp vụ (Mã 400 Bad Request) do tầng Service hoặc Valid ném ra
             const errorData = await response.json();
-
-            // Trích xuất chữ đỏ từ JSON
-            let errorMsg = '';
-            if(errorData.error) {
-                errorMsg = errorData.error; // Bắt lỗi từ Service (IllegalArgumentException)
-            } else {
-                // Bắt lỗi do @Valid ở DTO
-                errorMsg = Object.values(errorData).join('<br>');
-            }
-
+            let errorMsg = errorData.error ? errorData.error : Object.values(errorData).join('<br>');
             errorBox.innerHTML = '❌ ' + errorMsg;
             errorBox.style.display = 'block';
         } else if (response.status === 401) {
